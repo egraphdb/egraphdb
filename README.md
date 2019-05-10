@@ -10,18 +10,17 @@ systems.
 
 ## Introduction
 
-**TODO**
+Why build another graph database when there are so many already?
+It's the only question isn't it? Well just say that the original motivation
+of the creator was to make the end consumers aware of the costs and benefits
+running beneath the software. This will allow the users of this database
+efficiently and effectively use it to their benefit.
 
 ## Vision
 
 The high level plan is as follows:
 
-* Integrate into BeamParticle
 * Visual web-frontend to explore data stored in the graph
-* BeamParticle splits into various components largely
-  to reduce its footprint
-  (more details in the [BeamParticle](https://github.com/beamparticle/beamparticle) project
-* Integrate to BeamParticleCore (smallest reprogrammable engine)
 * Support multiple database backends (for example: PgSQL, Microsoft SQL Server, etc)
 * Data partitioning for writing to different database backends
   to allow explosion in write IOPS beyond a single backend database master
