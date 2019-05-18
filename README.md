@@ -1,3 +1,4 @@
+[![Gitter](https://badges.gitter.im/egraphdb/community.svg)](https://gitter.im/egraphdb/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 # EGraphDB
 
 Graph Database for building massively scalable and fault tolerant
