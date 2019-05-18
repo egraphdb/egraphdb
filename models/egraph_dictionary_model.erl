@@ -113,6 +113,10 @@ read(Key, State) ->
 %% @doc Update an existing resource.
 %%
 %% The modified resource is validated before this function is called.
+%% DONT allow update because if dictionary is modified then the
+%% content created with older dictionary will not be readable.
+%% This is the primary reason for disabling upadtes to already
+%% existing dictionary within the system. DO NOT change this.
 -spec update(egraph_callback:id(), egraph_k(), state()) -> {boolean(), state()}.
 update(_Key, _V, State) ->
     {false, State}.
