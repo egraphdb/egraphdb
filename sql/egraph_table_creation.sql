@@ -176,7 +176,7 @@ CREATE TABLE `egraph_details_base` (
 -- SHARDING: The sharding suffix is last 11 bits of `source` which is
 --           actually a 64bit number but stored in binary(8) since bigint
 --           can only store 63bit while 1 bit is used as sign bit.
---           So a total of 2^8 or 2048 shards are possible with this approach.
+--           So a total of 2^11 or 2048 shards are possible with this approach.
 --
 -- IMPORTANT: For bidirectional link there shall be two rows in this table,
 --            one for each source and destination combination.
