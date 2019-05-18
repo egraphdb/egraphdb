@@ -388,16 +388,24 @@ transform_result(E, AccIn) ->
                  E4#{<<"details_hash">> =>
                      egraph_util:bin_to_hex_binary(DetailsHash)}
          end,
-    [E5 | AccIn].
+    E6 = case maps:get(<<"updated_datetime">>, E5, undefined) of
+             undefined ->
+                 E5;
+             UpdatedDateTime ->
+                 E5#{<<"updated_datetime">> =>
+                     qdate:to_string(<<"Y-m-d H:i:s">>, UpdatedDateTime)}
+         end,
+    [E6 | AccIn].
 
 sql_insert_record(TableName, RawKey, SerializedDetails, DestinationRawKey, TimeoutMsec) ->
     DefaultVersion = 0,
     DetailsHash = egraph_util:generate_xxhash_binary(
                     egraph_util:convert_to_binary(SerializedDetails)),
+    UpdatedDateTime = qdate:to_date(erlang:system_time(second)),
     Q = iolist_to_binary([<<"INSERT INTO ">>,
                           TableName,
-                          <<" VALUES(?, ?, ?, ?, ?)">>]),
-    Params = [RawKey, DestinationRawKey, DefaultVersion, DetailsHash, SerializedDetails],
+                          <<" (source, destination, version, details_hash, details, updated_datetime) VALUES(?, ?, ?, ?, ?, ?)">>]),
+    Params = [RawKey, DestinationRawKey, DefaultVersion, DetailsHash, SerializedDetails, UpdatedDateTime],
     %% TODO: find out the cluster nodes which must persist this data
     %%       and save it there.
     PoolName = egraph_config_util:mysql_rw_pool(link),
@@ -414,10 +422,11 @@ sql_update_record(TableName, OldVersion, RawKey, DestinationRawKey,
     Version = OldVersion + 1,
     DetailsHash = egraph_util:generate_xxhash_binary(
                     egraph_util:convert_to_binary(SerializedDetails)),
+    UpdatedDateTime = qdate:to_date(erlang:system_time(second)),
     Q = iolist_to_binary([<<"UPDATE ">>,
                           TableName,
-                          <<" SET version=?, details_hash=?, details=? WHERE source=? and destination=? and version=?">>]),
-    Params = [Version, DetailsHash, SerializedDetails,
+                          <<" SET version=?, details_hash=?, details=? updated_datetime=? WHERE source=? and destination=? and version=?">>]),
+    Params = [Version, DetailsHash, SerializedDetails, UpdatedDateTime,
               RawKey, DestinationRawKey, OldVersion],
     %% TODO: need to check whether update indeed happened or not because
     %% the where clause may not match.

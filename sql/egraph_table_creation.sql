@@ -186,9 +186,11 @@ CREATE TABLE `egraph_link_base` (
   `version` int(4) NOT NULL DEFAULT '0' COMMENT 'contention resolution and for data etag',
   `details_hash` binary(8) DEFAULT '0' COMMENT 'xxhash64 of details',
   `details` blob DEFAULT NULL COMMENT 'link specific details',
+  `updated_datetime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Datetime when the entry was last updated',
   CONSTRAINT pkey PRIMARY KEY (`source`, `destination`),
   KEY `source` (`source`),
-  KEY `destination` (`destination`)
+  KEY `destination` (`destination`),
+  KEY `updated_datetime` (`updated_datetime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- CREATE TABLE IF NOT EXISTS egraph_link_base_<shardsuffix> LIKE egraph_link_base;

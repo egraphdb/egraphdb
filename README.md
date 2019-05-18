@@ -8,6 +8,23 @@ systems.
 
 ## Overview
 
+## Migrating to 0.4.x from 0.2.x
+
+1. Alter the base link table as follows:
+```
+ALTER TABLE egraph_link_base ADD COLUMN updated_datetime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+ALTER TABLE egraph_link_base ADD INDEX `updated_datetime` (`updated_datetime`);
+```
+
+2. Alter all the link tables which exists as follows:
+
+```
+ALTER TABLE egraph_link_base_0 ADD COLUMN updated_datetime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+ALTER TABLE egraph_link_base_0 ADD INDEX `updated_datetime` (`updated_datetime`);
+```
+> Create `update_datetime` column in all the tables and create an index as well.
 
 ## Introduction
 
