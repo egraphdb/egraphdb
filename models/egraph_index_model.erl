@@ -242,26 +242,7 @@ create_or_update_info(Info, State) ->
     end.
 
 delete_resource(Key, KeyType, IndexName) ->
-    DbKey = egraph_shard_util:convert_key_to_datatype(KeyType, Key),
-    BaseTableName = egraph_shard_util:base_table_name(KeyType),
-    {Query, Params} = case KeyType of
-        <<"geo">> ->
-            Q = iolist_to_binary([<<"DELETE FROM ">>,
-                              egraph_shard_util:sharded_tablename(
-                                IndexName, BaseTableName),
-                              <<" WHERE key_data=ST_GeomFromGeoJSON(?)">>]),
-            %% TODO: should we check for collisions?
-            P = [DbKey],
-            {Q, P};
-        _ ->
-            Q = iolist_to_binary([<<"DELETE FROM ">>,
-                              egraph_shard_util:sharded_tablename(
-                                IndexName, BaseTableName),
-                              <<" WHERE key_data=?">>]),
-            %% TODO: should we check for collisions?
-            P = [DbKey],
-            {Q, P}
-    end,
+    {Query, Params} = form_delete_index_base_query(Key, KeyType, IndexName),
     TimeoutMsec = egraph_config_util:mysql_rw_timeout_msec(index),
     PoolName = egraph_config_util:mysql_rw_pool(index),
     case egraph_sql_util:mysql_write_query(
@@ -272,34 +253,38 @@ delete_resource(Key, KeyType, IndexName) ->
             false
     end.
 delete_resource(Key, KeyType, Value, IndexName) ->
-    DbKey = egraph_shard_util:convert_key_to_datatype(KeyType, Key),
-    BaseTableName = egraph_shard_util:base_table_name(KeyType),
-    {Query, Params} = case KeyType of
-                          <<"geo">> ->
-                              Q = iolist_to_binary([<<"DELETE FROM ">>,
-                                  egraph_shard_util:sharded_tablename(
-                                      IndexName, BaseTableName),
-                                  <<" WHERE key_data=ST_GeomFromGeoJSON(?)">>]),
-                              %% TODO: should we check for collisions?
-                              P = [DbKey],
-                              {Q, P};
-                          _ ->
-                              Q = iolist_to_binary([<<"DELETE FROM ">>,
-                                  egraph_shard_util:sharded_tablename(
-                                      IndexName, BaseTableName),
-                                  <<" WHERE key_data=? and id=?">>]),
-                              %% TODO: should we check for collisions?
-                              P = [DbKey, Value],
-                              {Q, P}
-                      end,
+    {Query, Params} = form_delete_index_base_query(Key, KeyType, IndexName),
+    Query1 = iolist_to_binary([Query] ++ " and id=?"),
     TimeoutMsec = egraph_config_util:mysql_rw_timeout_msec(index),
     PoolName = egraph_config_util:mysql_rw_pool(index),
     case egraph_sql_util:mysql_write_query(
-        PoolName, Query, Params, TimeoutMsec) of
+        PoolName, Query1, Params ++ [Value], TimeoutMsec) of
         ok ->
             true;
         _ ->
             false
+    end.
+
+form_delete_index_base_query(Key, KeyType, IndexName) ->
+    DbKey = egraph_shard_util:convert_key_to_datatype(KeyType, Key),
+    BaseTableName = egraph_shard_util:base_table_name(KeyType),
+    case KeyType of
+        <<"geo">> ->
+            Q = iolist_to_binary([<<"DELETE FROM ">>,
+                egraph_shard_util:sharded_tablename(
+                    IndexName, BaseTableName),
+                <<" WHERE key_data=ST_GeomFromGeoJSON(?)">>]),
+            %% TODO: should we check for collisions?
+            P = [DbKey],
+            {Q, P};
+        _ ->
+            Q = iolist_to_binary([<<"DELETE FROM ">>,
+                egraph_shard_util:sharded_tablename(
+                    IndexName, BaseTableName),
+                <<" WHERE key_data=?">>]),
+            %% TODO: should we check for collisions?
+            P = [DbKey],
+            {Q, P}
     end.
 
 -spec read_resource(binary(), binary(), binary(), binary(), create) -> {ok, [map()]} | {error, term()}.
