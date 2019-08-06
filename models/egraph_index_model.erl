@@ -243,22 +243,18 @@ create_or_update_info(Info, State) ->
 
 delete_resource(Key, KeyType, IndexName) ->
     {Query, Params} = form_delete_index_base_query(Key, KeyType, IndexName),
-    TimeoutMsec = egraph_config_util:mysql_rw_timeout_msec(index),
-    PoolName = egraph_config_util:mysql_rw_pool(index),
-    case egraph_sql_util:mysql_write_query(
-           PoolName, Query, Params, TimeoutMsec) of
-        ok ->
-            true;
-        _ ->
-            false
-    end.
+    delete_resource_internal(Query, Params).
 delete_resource(Key, KeyType, Value, IndexName) ->
     {Query, Params} = form_delete_index_base_query(Key, KeyType, IndexName),
-    Query1 = iolist_to_binary([Query] ++ " and id=?"),
+    Query1 = <<Query/binary, " and id=?">>,
+    Params1 = Params ++ [Value],
+    delete_resource_internal(Query1, Params1).
+
+delete_resource_internal(Query, Params) ->
     TimeoutMsec = egraph_config_util:mysql_rw_timeout_msec(index),
     PoolName = egraph_config_util:mysql_rw_pool(index),
     case egraph_sql_util:mysql_write_query(
-        PoolName, Query1, Params ++ [Value], TimeoutMsec) of
+        PoolName, Query, Params, TimeoutMsec) of
         ok ->
             true;
         _ ->

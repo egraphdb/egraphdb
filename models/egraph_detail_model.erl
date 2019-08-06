@@ -754,7 +754,8 @@ change_indexes(Type, RawKey, OldIndexes, Indexes, DbStoredDetailsInfo, UpdatedDe
     DeletedIndexResults = delete_index(
                             ChangedIndexes ++ DeletedIndexes,
                             Type,
-                            DbStoredDetailsInfo, RawKey,
+                            DbStoredDetailsInfo,
+                            RawKey,
                             []),
     case DeletedIndexResults of
         [] ->
