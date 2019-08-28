@@ -594,9 +594,9 @@ sql_update_record(TableName, OldVersion, RawKey, DbStoredDetailsInfo, DbStoredIn
             false
     end.
 
-delete_index([], _Type, _Details, AccIn) ->
+delete_index([], _Type, _Details, _RawKey, AccIn) ->
     AccIn;
-delete_index([JsonPath | Rest], Type, Details, AccIn) ->
+delete_index([JsonPath | Rest], Type, Details, RawKey, AccIn) ->
     IndexName = case Type of
                     generic -> lists:last(JsonPath);
                     lowercase -> iolist_to_binary(
@@ -605,16 +605,16 @@ delete_index([JsonPath | Rest], Type, Details, AccIn) ->
                 end,
     Key = nested:get(JsonPath, Details),
     KeyType = egraph_shard_util:key_datatype(Key),
-    case egraph_index_model:delete_resource(Key, KeyType, IndexName) of
+    case egraph_index_model:delete_resource(Key, KeyType, RawKey, IndexName) of
         true ->
-            delete_index(Rest, Type, Details, AccIn);
+            delete_index(Rest, Type, Details, RawKey, AccIn);
         false ->
             %% retry at least once
-            case egraph_index_model:delete_resource(Key, KeyType, IndexName) of
+            case egraph_index_model:delete_resource(Key, KeyType, RawKey,IndexName) of
                 true ->
-                    delete_index(Rest, Type, Details, AccIn);
+                    delete_index(Rest, Type, Details, RawKey, AccIn);
                 false ->
-                    delete_index(Rest, Type, Details, [{Key, KeyType, IndexName} | AccIn])
+                    delete_index(Rest, Type, Details, RawKey, [{Key, KeyType, IndexName} | AccIn])
             end
     end.
 
@@ -755,6 +755,7 @@ change_indexes(Type, RawKey, OldIndexes, Indexes, DbStoredDetailsInfo, UpdatedDe
                             ChangedIndexes ++ DeletedIndexes,
                             Type,
                             DbStoredDetailsInfo,
+                            RawKey,
                             []),
     case DeletedIndexResults of
         [] ->

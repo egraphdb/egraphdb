@@ -31,7 +31,7 @@
 -export([search/6, search/3]).
 -export([read_all_resource/4]).
 -export([create_or_update_info/2]).
--export([delete_resource/3]).
+-export([delete_resource/3, delete_resource/4]).
 -export([read_resource/5]).
 %% -export([sql_insert_record/4]).
 -export_type([egraph_k/0]).
@@ -242,34 +242,45 @@ create_or_update_info(Info, State) ->
     end.
 
 delete_resource(Key, KeyType, IndexName) ->
+    {Query, Params} = form_delete_index_base_query(Key, KeyType, IndexName),
+    delete_resource_internal(Query, Params).
+delete_resource(Key, KeyType, Value, IndexName) ->
+    {Query, Params} = form_delete_index_base_query(Key, KeyType, IndexName),
+    Query1 = <<Query/binary, " and id=?">>,
+    Params1 = Params ++ [Value],
+    delete_resource_internal(Query1, Params1).
+
+delete_resource_internal(Query, Params) ->
+    TimeoutMsec = egraph_config_util:mysql_rw_timeout_msec(index),
+    PoolName = egraph_config_util:mysql_rw_pool(index),
+    case egraph_sql_util:mysql_write_query(
+        PoolName, Query, Params, TimeoutMsec) of
+        ok ->
+            true;
+        _ ->
+            false
+    end.
+
+form_delete_index_base_query(Key, KeyType, IndexName) ->
     DbKey = egraph_shard_util:convert_key_to_datatype(KeyType, Key),
     BaseTableName = egraph_shard_util:base_table_name(KeyType),
-    {Query, Params} = case KeyType of
+    case KeyType of
         <<"geo">> ->
             Q = iolist_to_binary([<<"DELETE FROM ">>,
-                              egraph_shard_util:sharded_tablename(
-                                IndexName, BaseTableName),
-                              <<" WHERE key_data=ST_GeomFromGeoJSON(?)">>]),
+                egraph_shard_util:sharded_tablename(
+                    IndexName, BaseTableName),
+                <<" WHERE key_data=ST_GeomFromGeoJSON(?)">>]),
             %% TODO: should we check for collisions?
             P = [DbKey],
             {Q, P};
         _ ->
             Q = iolist_to_binary([<<"DELETE FROM ">>,
-                              egraph_shard_util:sharded_tablename(
-                                IndexName, BaseTableName),
-                              <<" WHERE key_data=?">>]),
+                egraph_shard_util:sharded_tablename(
+                    IndexName, BaseTableName),
+                <<" WHERE key_data=?">>]),
             %% TODO: should we check for collisions?
             P = [DbKey],
             {Q, P}
-    end,
-    TimeoutMsec = egraph_config_util:mysql_rw_timeout_msec(index),
-    PoolName = egraph_config_util:mysql_rw_pool(index),
-    case egraph_sql_util:mysql_write_query(
-           PoolName, Query, Params, TimeoutMsec) of
-        ok ->
-            true;
-        _ ->
-            false
     end.
 
 -spec read_resource(binary(), binary(), binary(), binary(), create) -> {ok, [map()]} | {error, term()}.
