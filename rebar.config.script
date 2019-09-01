@@ -24,7 +24,41 @@ file:close(Fd).
 
 case os:type() of
     {win32, _} ->
-        ok;
+        JiffyOverride = {override, jiffy, [
+                           {plugins, [pc]},
+                           % for win32
+                           {artifacts, ["priv/jiffy.dll"]},
+                           {provider_hooks, [
+                               {post,
+                                   [
+                                       {compile, {pc, compile}},
+                                       {clean, {pc, clean}}
+                                   ]
+                               }]
+                           }
+                        ]},
+        XXHashOverride = {override, xxhash, [
+                           {plugins, [pc]},
+                           % for win32
+                           {artifacts, ["priv/xxhash.dll"]},
+                           {provider_hooks, [
+                               {post,
+                                   [
+                                       {compile, {pc, compile}},
+                                       {clean, {pc, clean}}
+                                   ]
+                               }]
+                           },
+                           {post_hooks, [
+                               {compile, "copy priv\\xxhash_drv.dll priv\\xxhash.dll"}
+                           ]}
+                        ]},
+        Config2 = lists:keystore(overrides, 1, CONFIG, {overrides, [JiffyOverride, XXHashOverride]}),
+        Win32ProdProfile = {prod, [{relx, [{dev_mode, false},
+                                             {include_src, false},
+                                             {include_erts, true}]}
+                                             ]},
+        lists:keystore(profiles, 1, Config2, {profiles, [Win32ProdProfile]});
     {osx, _} ->
         JiffyDbOverride = {overrides , [
               {override , eleveldb, [{ pre_hooks , [{ compile , "make" }]}]}
