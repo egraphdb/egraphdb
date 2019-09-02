@@ -1,0 +1,283 @@
+swagger: "2.0"
+info:
+  description: "This is an EgraphDB server. Find out more about EgraphDB at [https://github.com/egraphdb/egraphdb](http://github.com/egraphdb/egraphdb). You can find out more about Swagger at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/). For this sample, you can use the api key `special-key` to test the authorization filters."
+  version: "0.4.0"
+  title: "Swagger EgraphDB"
+  termsOfService: "http://github.com/egraphdb/egraphdb/LICENSE"
+  contact:
+    email: "neerajsharma.9@outlook.com"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "egraphdb.org"
+basePath: "/"
+tags:
+- name: "detail"
+  description: "Everything about your nodes"
+schemes:
+- "http"
+paths:
+  /detail:
+    post:
+      tags:
+      - "detail"
+      summary: "Add a new node to EgraphDB"
+      description: ""
+      operationId: "addDetail"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Graph node object that needs to be added to the db"
+        required: true
+        schema:
+          $ref: "#/definitions/Detail"
+      responses:
+        201:
+          description: "content created"
+        405:
+          description: "Invalid input"
+      security:
+      - WriteSecurity: []
+  /detail/{key_data}:
+    get:
+      tags:
+      - "detail"
+      summary: "Retrieve an existing graph node"
+      description: "Get a node within the graph database via directly using the **key_data** field which you used while adding the node."
+      operationId: "readDetail"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "path"
+        name: "key_data"
+        type: "string"
+        description: "the unique key passed while creating a graph node"
+        required: true
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Detail"
+        404:
+          description: "Not found"
+      security:
+      - ReadSecurity: []
+      - WriteSecurity: []
+  /index/{value}:
+    get:
+      tags:
+      - "index"
+      summary: "Search graph nodes based on index search"
+      description: "Search for one or more graph nodes based on index. A sample usage as per the create example is /index/INR?keytype=text&indexname=currency. So here we are searching for all the graph nodes which have an index (last part of index creation) **currency** which is of type **text** (or string) with a value of **INR**."
+      operationId: "searchDetail"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "path"
+        name: "value"
+        type: "string"
+        description: "value of the index which you are searchin on"
+        required: true
+      - in: "query"
+        name: "keytype"
+        type: "string"
+        description: "type of value which is part of the path"
+        required: true
+      - in: "query"
+        name: "indexname"
+        type: "string"
+        description: "name of the index which was used while creating a graph node in its details"
+        required: true
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/ListDetails"
+        404:
+          description: "Not found"
+      security:
+      - ReadSecurity: []
+      - WriteSecurity: []
+  /link:
+    post:
+      tags:
+      - "link"
+      summary: "Create directed link from one node to another within EgraphDB"
+      description: "It is very easy to create a directed link between a source node to a destination node as follows. The idea is to create an entry within the graph database with respect to source, destination and the information (json object) which represent their relationship. This relationship data can be any valid json object which is stored as-is. Additionally, note that no further indexing is possible on this relation json data. It is very useful to add relationship data which you want to quickly pull out when searching for links within the graph originating from a specific source (and optionally to a given destination)."
+      operationId: "addLink"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Graph link object that needs to be added to the db"
+        required: true
+        schema:
+          $ref: "#/definitions/Link"
+      responses:
+        201:
+          description: "content created"
+        405:
+          description: "Invalid input"
+      security:
+      - WriteSecurity: []
+  /link/{source}:
+    get:
+      tags:
+      - "link"
+      summary: "Retrieve an existing graph node"
+      description: "Get all links from a given source (with **key_data**) to either one or all destinations (in case the destination query param is absent)."
+      operationId: "readLink"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "path"
+        name: "source"
+        type: "string"
+        description: "the unique key passed for a given source (**key_data**)"
+        required: true
+      - in: "query"
+        name: "destination"
+        type: "string"
+        description: "An optional query param to give info for a specific destination. If this parameter is absent the relationship between the given source and all destinations is returned back"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/ListLink"
+        404:
+          description: "Not found"
+      security:
+      - ReadSecurity: []
+      - WriteSecurity: []
+securityDefinitions:
+  ReadSecurity:
+    type: "apiKey"
+    name: "READ-EGRAPHDB-KEY"
+    in: "header"
+  WriteSecurity:
+    type: "apiKey"
+    name: "WRITE-EGRAPHDB-KEY"
+    in: "header"
+  AdminSecurity:
+    type: "apiKey"
+    name: "ADMIN-EGRAPHDB-KEY"
+    in: "header"
+definitions:
+  ListDetails:
+    type: "array"
+    items:
+      $ref: "#/definitions/Detail"
+  DetailsObject:
+    type: "object"
+    example:
+      name: India
+      capital: New Delhi
+      capital_geolocation:
+        type: Point
+        coordinates:
+          - 77.23
+          - 28.61
+      largest_city: Mumbai
+      largest_citygeolocation:
+        type: Point
+        coordinates:
+          - 77.23
+          - 28.61
+      religions:
+        - Hinduism
+        - Islam
+        - Christianity
+        - Sikhism
+        - Buddhism
+        - Jainism
+        - Others
+      dominion: '1947-08-15'
+      republic: '1950-01-26'
+      geography:
+        total_area_sq_km: 3287263
+        water_percent: 9.6
+      population:
+        population_2016: 1324171354
+        density_sq_km: 398.3
+      currency: INR
+      currency_full: Indian Rupee
+      iso_3166_code: IN
+      calling_code: '+91'
+  Detail:
+    type: "object"
+    required:
+      - "key_data"
+      - "details"
+    properties:
+      key_data:
+        type: "string"
+        example: "any unique key for node"
+      details:
+        $ref: "#/definitions/DetailsObject"
+      indexes:
+        type: "object"
+        properties:
+          indexes:
+            type: "array"
+            items:
+              type: "array"
+              items:
+                type: "string"
+            example:
+              - - currency
+              - - capital_geolocation
+              - - largest_citygeolocation
+              - - dominion
+              - - republic
+              - - geography
+                - total_area_sq_km
+              - - geography
+                - water_percent
+              - - population
+                - density_sq_km
+          lowercase_indexes:
+            type: "array"
+            items:
+              type: "array"
+              items:
+                type: "string"
+            example:
+              - - capital
+              - - largest_city
+              - - currency_full
+  ListLink:
+    type: "array"
+    items:
+      $ref: "#/definitions/Link"
+  Link:
+    type: "object"
+    required:
+      - "source"
+      - "destination"
+      - "details"
+    properties:
+      source:
+        type: "string"
+        description: "key_data of the source node"
+        example: "india"
+      destination:
+        type: "string"
+        description: "key_data of the destination node"
+        example: "usa"
+      details:
+        type: "object"
+        description: "an object of properties for the relationship"
+        example:
+          distance_km: 13568
+          capital_flight_time_hours: 15.5
+          yearly_tourists: 1100000
+externalDocs:
+  description: "Find out more about EgraphDB"
+  url: "http://github.com/egraphdb/egraphdb"
