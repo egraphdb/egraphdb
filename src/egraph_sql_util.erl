@@ -138,12 +138,19 @@ mysql_write_query_internal(Poolname, Query, Params, TimeoutMsec) ->
 %% @private Run a MySQL query within a safety net
 -spec run_mysql_query(Pid :: pid(),
                       Query :: binary(),
-                      Params :: list(),
+                      Params :: undefined | no_params | list(),
                       TimeoutMsec :: non_neg_integer()) ->
     ok | {ok, Cols :: list(), Rows :: list()} | {error, term()}.
 run_mysql_query(Pid, Query, Params, TimeoutMsec) ->
     try
-        R = mysql:query(Pid, Query, Params, TimeoutMsec),
+        R = case Params of
+                undefined ->
+                    mysql:query(Pid, Query, TimeoutMsec);
+                no_params ->
+                    mysql:query(Pid, Query, TimeoutMsec);
+                _ ->
+                    mysql:query(Pid, Query, Params, TimeoutMsec)
+            end,
         lager:debug(?LAGER_ATTRS, "[~p] ~p Result = ~p", [self(), ?MODULE, R]),
         R
     catch

@@ -282,11 +282,14 @@ read_resource(RawKey, create) ->
     BaseTableName = ?EGRAPH_TABLE_DETAILS_BASE,
     TableName = egraph_shard_util:sharded_tablename(
                  key, RawKey, BaseTableName),
+    RawKeyHexString = egraph_util:bin_to_hex_binary(RawKey),
     Q = iolist_to_binary([<<"SELECT * FROM ">>,
                           TableName,
-                          <<" WHERE source=?">>]),
-    Params = [RawKey],
-    read_generic_resource(Q, Params, create, BaseTableName, TableName).
+                          <<" WHERE source=X'">>,
+                          RawKeyHexString,
+                          <<"'">>]),
+    % Params = [RawKey],
+    read_generic_resource(Q, undefined, create, BaseTableName, TableName).
 
 %% TODO: Find the cluster nodes which must have this data and pull from there.
 -spec read_resource(binary()) -> {ok, [map()]} | {error, term()}.
@@ -294,11 +297,14 @@ read_resource(RawKey) ->
     BaseTableName = ?EGRAPH_TABLE_DETAILS_BASE,
     TableName = egraph_shard_util:sharded_tablename(
                  key, RawKey, BaseTableName),
+    RawKeyHexString = egraph_util:bin_to_hex_binary(RawKey),
     Q = iolist_to_binary([<<"SELECT * FROM ">>,
                           TableName,
-                          <<" WHERE source=?">>]),
-    Params = [RawKey],
-    read_generic_resource(Q, Params).
+                          <<" WHERE source=X'">>,
+                          RawKeyHexString,
+                          <<"'">>]),
+    % Params = [RawKey],
+    read_generic_resource(Q, undefined).
 
 %% TODO: Find the cluster nodes which must have this data and pull from there.
 %% The assumption is that all the RawKeys are in the same shard
